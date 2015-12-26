@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
+using tar_cs;
 
 namespace Steam_Desktop_Authenticator
 {
@@ -284,20 +285,24 @@ namespace Steam_Desktop_Authenticator
 
             console.OutputDataReceived += f1;
 
-            OnOutputLog("Extracting (1/5)");
+            OnOutputLog("Backup (1/5) (making)");
             ExecuteCommand("adb backup --noapk com.valvesoftware.android.steam.community & echo Done");
             OnOutputLog("Now unlock your phone and confirm operation");
             mre.Wait();
 
             mre.Reset();
-            OnOutputLog("Extracting (2/5)");
-            ExecuteCommand("adb push backup.ab /sdcard/steamauth/backup.ab & echo Done");
+            OnOutputLog("Backup (2/5) (converting)");
+            ExecuteCommand("java -jar abe.jar unpack backup.ab backup.tar & echo Done");
             mre.Wait();
 
             mre.Reset();
-            OnOutputLog("Extracting (3/5)");
-            ExecuteCommand("adb shell \" cd /sdcard/steamauth ; ( printf " + @" '\x1f\x8b\x08\x00\x00\x00\x00\x00'" + " ; tail -c +25 backup.ab ) |  tar xfvz - \" & echo Done");
-            mre.Wait();
+            OnOutputLog("Backup (3/5) (extracting)");
+
+            using (FileStream stream = File.Open("backup.tar", FileMode.Open))
+            {
+                TarReader reader = new TarReader(stream);
+                reader.ReadToEnd("steamguard");
+            }
 
             console.OutputDataReceived -= f1;
         }
