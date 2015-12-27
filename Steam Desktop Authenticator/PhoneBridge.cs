@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
-using tar_cs;
 
 namespace Steam_Desktop_Authenticator
 {
@@ -143,7 +142,20 @@ namespace Steam_Desktop_Authenticator
             if (root)
                 ExecuteCommand("adb shell \"cat /data/data/$STEAMAPP/shared_prefs/steam.uuid.xml\" & echo Done");
             else
-                ExecuteCommand("adb shell \"cat /sdcard/steamauth/apps/$STEAMAPP/sp/steam.uuid.xml\" & echo Done");
+            {
+                foreach (string item in File.ReadAllLines("apps/com.valvesoftware.android.steam.community/sp/steam.uuid.xml"))
+                {
+                    string d = item.Trim();
+                    if (d.StartsWith("<string"))
+                    {
+                        int i = d.IndexOf("android");
+                        id = d.Substring(23, (d.Length - i) - 9);
+                        mre.Set();
+                        break;
+                    }
+                }
+            }
+
             mre.Wait();
 
             console.OutputDataReceived -= f1;
@@ -232,22 +244,14 @@ namespace Steam_Desktop_Authenticator
 
             console.OutputDataReceived += f1;
 
-            if (!Directory.Exists("steamguard"))
+            if (!Directory.Exists("apps"))
             {
                 DoBackup();
             }
 
-            mre.Reset();
-            OnOutputLog("Extracting (4/5)");
-            ExecuteCommand("adb pull /sdcard/steamauth/apps/$STEAMAPP/f steamguard/ & echo Done");
-            mre.Wait();
+            OnOutputLog("Retrieving (1/1)");
 
-            mre.Reset();
-            OnOutputLog("Extracting (5/5)");
-            ExecuteCommand("adb shell \"rm -dR /sdcard/steamauth\" & echo Done");
-            mre.Wait();
-
-            string[] files = Directory.EnumerateFiles("steamguard").ToArray<string>();
+            string[] files = Directory.EnumerateFiles("apps/com.valvesoftware.android.steam.community/f").ToArray<string>();
             for (int i = 0; i < files.Length; i++)
             {
                 files[i] = files[i].Split('-')[1];
@@ -258,7 +262,7 @@ namespace Steam_Desktop_Authenticator
                 OnMoreThanOneAccount(new List<string>(files));
                 return null;
             } else {
-                json = File.ReadAllText("steamguard/Steamguard-" + sid);
+                json = File.ReadAllText("apps/com.valvesoftware.android.steam.community/f/Steamguard-" + sid);
             }
 
             console.OutputDataReceived -= f1;
@@ -269,8 +273,9 @@ namespace Steam_Desktop_Authenticator
         private void CleanBackup()
         {
             File.Delete("backup.ab");
-            if (Directory.Exists("steamguard"))
-                Directory.Delete("steamguard", true);
+            File.Delete("backup.tar");
+            if (Directory.Exists("apps"))
+                Directory.Delete("apps", true);
         }
 
         private void DoBackup()
@@ -285,24 +290,20 @@ namespace Steam_Desktop_Authenticator
 
             console.OutputDataReceived += f1;
 
-            OnOutputLog("Backup (1/5) (making)");
-            ExecuteCommand("adb backup --noapk com.valvesoftware.android.steam.community & echo Done");
+            OnOutputLog("Backup (1/3) (making)");
+            ExecuteCommand("adb backup --noapk $STEAMAPP & echo Done");
             OnOutputLog("Now unlock your phone and confirm operation");
             mre.Wait();
 
             mre.Reset();
-            OnOutputLog("Backup (2/5) (converting)");
-            ExecuteCommand("java -jar abe.jar unpack backup.ab backup.tar & echo Done");
+            OnOutputLog("Backup (2/3) (converting)");
+            ExecuteCommand(@"java -jar binaries\abe.jar unpack backup.ab backup.tar & echo Done");
             mre.Wait();
 
             mre.Reset();
-            OnOutputLog("Backup (3/5) (extracting)");
-
-            using (FileStream stream = File.Open("backup.tar", FileMode.Open))
-            {
-                TarReader reader = new TarReader(stream);
-                reader.ReadToEnd("steamguard");
-            }
+            OnOutputLog("Backup (3/3) (extracting)");
+            ExecuteCommand(@"binaries\tar -xvf backup.tar & echo Done");
+            mre.Wait();
 
             console.OutputDataReceived -= f1;
         }
