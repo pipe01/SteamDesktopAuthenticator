@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,8 @@ namespace Steam_Desktop_Authenticator
         private SteamGuardAccount acc;
         private List<Confirmation> confirms = new List<Confirmation>();
         private bool deny2, accept2;
+        private Stopwatch sw = new Stopwatch();
+        private Manifest man = Manifest.GetManifest();
 
         public TradePopupForm()
         {
@@ -51,9 +54,7 @@ namespace Steam_Desktop_Authenticator
             }
             else
             {
-                lblStatus.Text = "Accepting...";
-                acc.AcceptConfirmation(confirms[0]);
-                confirms.RemoveAt(0);
+                Accept();
                 Reset();
             }
         }
@@ -68,9 +69,7 @@ namespace Steam_Desktop_Authenticator
             }
             else
             {
-                lblStatus.Text = "Denying...";
-                acc.DenyConfirmation(confirms[0]);
-                confirms.RemoveAt(0);
+                Deny();
                 Reset();
             }
         }
@@ -87,6 +86,13 @@ namespace Steam_Desktop_Authenticator
             lblAccount.Text = "";
             lblStatus.Text = "";
 
+            sw.Reset();
+            if (man.AutoacceptConfirmations)
+            {
+                sw.Start();
+                timer1.Start();
+            }
+
             if (confirms.Count == 0)
             {
                 this.Hide();
@@ -97,10 +103,36 @@ namespace Steam_Desktop_Authenticator
             }
         }
 
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            lblStatus.Text = "Accepting in " + sw.Elapsed.Seconds;
+            if (sw.Elapsed.Seconds == man.AutoacceptDelay)
+            {
+                sw.Reset();
+                Accept();
+                timer1.Stop();
+                Reset();
+            }
+        }
+
         public void Popup()
         {
             Reset();
             this.Show();
+        }
+
+        private void Accept()
+        {
+            lblStatus.Text = "Accepting...";
+            acc.AcceptConfirmation(confirms[0]);
+            confirms.RemoveAt(0);
+        }
+
+        private void Deny()
+        {
+            lblStatus.Text = "Denying...";
+            acc.DenyConfirmation(confirms[0]);
+            confirms.RemoveAt(0);
         }
     }
 }

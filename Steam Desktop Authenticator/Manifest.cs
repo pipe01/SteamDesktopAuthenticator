@@ -30,6 +30,12 @@ namespace Steam_Desktop_Authenticator
         [JsonProperty("periodic_checking_checkall")]
         public bool CheckAllAccounts { get; set; } = false;
 
+        [JsonProperty("autoaccept_confirmations")]
+        public bool AutoacceptConfirmations { get; set; } = false;
+
+        [JsonProperty("autoaccept_delay")]
+        public int AutoacceptDelay { get; set; } = 5;
+
         private static Manifest _manifest { get; set; }
 
         public static string GetExecutableDir()

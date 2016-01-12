@@ -28,12 +28,14 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TradePopupForm));
             this.lblDesc = new System.Windows.Forms.Label();
             this.btnDeny = new System.Windows.Forms.Button();
             this.btnAccept = new System.Windows.Forms.Button();
             this.lblStatus = new System.Windows.Forms.Label();
             this.lblAccount = new System.Windows.Forms.Label();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // lblDesc
@@ -90,6 +92,10 @@
             this.lblAccount.Text = "account name";
             this.lblAccount.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // timer1
+            // 
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
             // TradePopupForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -117,5 +123,6 @@
         private System.Windows.Forms.Button btnAccept;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.Label lblAccount;
+        private System.Windows.Forms.Timer timer1;
     }
 }
